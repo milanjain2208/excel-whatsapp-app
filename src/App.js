@@ -1,23 +1,40 @@
-import logo from './logo.svg';
+// src/App.js
+import React, { useState } from "react";
 import './App.css';
+import Spreadsheet from "./Spreadsheet";
+import ExcelUploader from "./ExcelUploader";
 
 function App() {
+  const [excelData, setExcelData] = useState(null);
+  const [showUploader, setShowUploader] = useState(true);
+
+  const handleFileUpload = (uploadedData) => {
+    setExcelData(uploadedData);
+    setShowUploader(false);
+  };
+
+  const handleUploadNew = () => {
+    setShowUploader(true);
+  };
+
+
+  console.log(excelData);
+
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      {showUploader && (
+        <ExcelUploader 
+          onFileUpload={handleFileUpload}
+          onClose={() => setShowUploader(false)}
+        />
+      )}
+      
+      <Spreadsheet 
+        data={excelData?.data}
+        mergeCells={excelData?.mergeCells}
+        fileName={excelData?.fileName}
+        onUploadNew={handleUploadNew}
+      />
     </div>
   );
 }
