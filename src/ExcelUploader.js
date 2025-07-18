@@ -85,7 +85,7 @@ const ExcelUploader = ({ onFileUpload, onClose }) => {
         
         // Convert merged cells to handsontable format
         const mergeCells = mergedCells.map(merge => {
-          console.log('Processing merge:', merge);
+        //   console.log('Processing merge:', merge);
           return {
             row: merge.s.r,
             col: merge.s.c,
@@ -94,7 +94,7 @@ const ExcelUploader = ({ onFileUpload, onClose }) => {
           };
         });
         
-        console.log('Converted merge cells:', mergeCells);
+        // console.log('Converted merge cells:', mergeCells);
         
         // Ensure we have data
         if (jsonData.length === 0) {

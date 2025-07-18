@@ -1,70 +1,69 @@
-# Getting Started with Create React App
+# Excel WhatsApp App 📊📤
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A cross-platform desktop app that lets you **select an area of a spreadsheet and send it as a PDF to any WhatsApp contact** — all in just a few clicks.
 
-## Available Scripts
+This tool combines the flexibility of Excel-style editing with the power of WhatsApp messaging. Whether you're managing client lists, sending summaries, or broadcasting custom messages — it's built for fast, simple communication.
 
-In the project directory, you can run:
+> ⚠️ This app was mostly vibe-coded over a weekend, so there may be bugs lurking in unexpected corners. Feel free to fix them, add new features, or help reduce the package size — it's quite large right now!
 
-### `npm start`
+---
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## ✨ Features
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- 🧮 Spreadsheet-like editor using [Handsontable](https://handsontable.com/)
+- ✅ Select a range of rows and columns to send
+- 📄 Export selected data as a clean PDF using `jspdf` + `jspdf-autotable`
+- 💬 Send the generated PDF directly via WhatsApp to selected contacts
+- 🖥️ Built using Electron + Create React App for a native-like desktop experience
 
-### `npm test`
+---
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## ⚠️ Disclaimer
 
-### `npm run build`
+This app uses [`whatsapp-web.js`](https://github.com/pedroslopez/whatsapp-web.js), a library that controls WhatsApp Web through a headless browser.
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+> **It is not guaranteed that you will not be blocked** by using this method. WhatsApp does **not allow bots or unofficial clients** on their platform, so this project should be used **at your own risk** and **only for personal or internal use**.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+---
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## 🛠️ Tech Stack
 
-### `npm run eject`
+| Layer              | Library/Framework         |
+|--------------------|---------------------------|
+| Frontend UI        | React (via Create React App) |
+| Spreadsheet Editor | Handsontable              |
+| PDF Export         | jspdf + jspdf-autotable   |
+| Desktop Runtime    | Electron                  |
+| WhatsApp Messaging | whatsapp-web.js           |
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+---
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## 🚀 Getting Started
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+```bash
+# 1. Clone the repository
+git clone git@github-personal:milanjain2208/excel-whatsapp-app.git
+cd excel-whatsapp-app
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+# 2. Install dependencies
+npm install
 
-## Learn More
+# 3. Run the desktop app (this will build React and launch Electron)
+npm run desktop
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+---
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## 📸 Preview
 
-### Code Splitting
+(Add screenshots or a demo GIF here)
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+---
 
-### Analyzing the Bundle Size
+## 🤝 Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+This project is open to contributions!
 
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+- 🐛 Found a bug? Fix it.
+- 🌟 Want a new feature? Add it.
+- 📦 Can you reduce the bloated package size? You're my hero.

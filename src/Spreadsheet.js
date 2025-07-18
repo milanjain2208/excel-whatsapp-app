@@ -1,176 +1,177 @@
 // src/Spreadsheet.js
-import React, { useRef } from "react";
+import React, { useRef, useState, useMemo, useCallback } from "react";
 import { HotTable } from "@handsontable/react";
 import { registerAllModules } from 'handsontable/registry';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import { autoTable } from 'jspdf-autotable';
+import WhatsAppDropdown from './WhatsAppDropdown';
 
 registerAllModules();
 
-const Spreadsheet = ({ data, mergeCells, fileName, onUploadNew }) => {
+// Move outside component scope for stability
+const { ipcRenderer } = window.require ? window.require('electron') : {};
+
+const Spreadsheet = ({ data, mergeCells, fileName, onUploadNew, whatsappContacts }) => {
   const hotRef = useRef(null);
+  const [dropdownConfig, setDropdownConfig] = useState(null);
 
-  // Use uploaded data if available, otherwise use sample data
-  const tableData = data || [
-    ["Name", "Age", "Country"],
-    ["Milan", 26, "India"],
-    ["Aditya", 25, "India"]
-  ];
+  // 🔧 Fix: Memoized processed data
+  const processedData = useMemo(() => {
+    const rawData = data || [
+      ["Name", "Age", "Country"],
+      ["Milan", 26, "India"],
+      ["Aditya", 25, "India"]
+    ];
 
-  // Ensure we have enough columns (minimum 26 columns like Excel A-Z)
-  const minColumns = 26;
-  const processedData = tableData.map(row => {
-    const newRow = [...row];
-    while (newRow.length < minColumns) {
-      newRow.push('');
+    const minColumns = 26;
+    const minRows = 100;
+
+    const filledRows = rawData.map(row => {
+      const newRow = [...row];
+      while (newRow.length < minColumns) newRow.push('');
+      return newRow;
+    });
+
+    while (filledRows.length < minRows) {
+      filledRows.push(new Array(minColumns).fill(''));
     }
-    return newRow;
-  });
 
-  // Ensure we have enough rows (minimum 100 rows)
-  const minRows = 100;
-  while (processedData.length < minRows) {
-    const newRow = new Array(minColumns).fill('');
-    processedData.push(newRow);
-  }
+    return filledRows;
+  }, [data]);
 
+  // 📤 Show WhatsApp dropdown at specific position
+  const showWhatsAppDropdown = useCallback((row, col, cellElement) => {
+    const rect = cellElement.getBoundingClientRect();
+    setDropdownConfig({
+      contacts: whatsappContacts || [],
+      position: { 
+        top: rect.bottom + window.scrollY, 
+        left: rect.left + window.scrollX 
+      },
+      onSend: async (selectedContact) => {
+        return await sendPDFToContact(selectedContact);
+      },
+      onClose: () => setDropdownConfig(null),
+    });
+  }, [whatsappContacts]);
 
-
-  // Convert column number to Excel-style letter
-  const getColumnLetter = (col) => {
-    let result = '';
-    let num = col;
-    while (num >= 0) {
-      result = String.fromCharCode(65 + (num % 26)) + result;
-      num = Math.floor(num / 26) - 1;
-    }
-    return result;
-  };
-
-  // Generate PDF from selected data
-  const saveSelectedToPDF = () => {
+  // 📤 Send PDF to selected contact
+  const sendPDFToContact = async (selectedContact) => {
     const hot = hotRef.current?.hotInstance;
     const selected = hot?.getSelected() || [];
-    
+
     if (selected.length === 0) {
-      alert('Please select an area to save as PDF');
-      return;
+      alert('Please select an area to send as PDF');
+      throw new Error('No selection');
     }
 
-    try {
-      let selectedData = [];
+    let selectedData = [];
+    for (const item of selected) {
+      selectedData.push(...(hot.getData(...item) || []));
+    }
+
+    const filteredData = selectedData.filter(row =>
+      row.some(cell => cell !== null && cell !== undefined && cell !== '')
+    );
+
+    const pdf = new jsPDF();
+    if (filteredData.length === 0) {
+      pdf.text('Selected area contains no data', 14, 20);
+    } else {
+      const head = filteredData.length > 0 ? [filteredData[0]] : [];
+      const body = filteredData.length > 1 ? filteredData.slice(1) : [];
       
-      if (selected.length === 1) {
-        // Single selection
-        selectedData = hot?.getData(...selected[0]) || [];
+      autoTable(pdf, {
+        head: head,
+        body: body,
+        startY: 20,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [59, 130, 246], textColor: 255, fontStyle: 'bold' },
+        alternateRowStyles: { fillColor: [245, 247, 250] },
+        tableLineColor: [229, 231, 235],
+        tableLineWidth: 0.5,
+      });
+    }
+
+    const fileName = `${filteredData?.[0]?.[0] || 'document'}_${new Date().toISOString().split('T')[0]}.pdf`;
+    const bufferArray = Array.from(new Uint8Array(pdf.output('arraybuffer')));
+
+    if (ipcRenderer) {
+      const result = await ipcRenderer.invoke('send-pdf', {
+        contactId: selectedContact.id,
+        pdfBuffer: bufferArray,
+        fileName
+      });
+
+      if (result.success) {
+        alert(`PDF sent successfully to ${selectedContact.name}!`);
       } else {
-        // Multiple selections - combine them
-        for (let i = 0; i < selected.length; i += 1) {
-          const item = selected[i];
-          selectedData.push(...(hot?.getData(...item) || []));
-        }
+        alert(`Failed to send PDF: ${result.error}`);
+        throw new Error(result.error);
       }
-
-      // Create PDF
-      const pdf = new jsPDF();
-      
-      // Add title
-      const [startRow, startCol, endRow, endCol] = selected[0];
-      const rangeText = `${getColumnLetter(startCol)}${startRow + 1}:${getColumnLetter(endCol)}${endRow + 1}`;
-      const title = fileName ? `${fileName} - Range ${rangeText}` : `Spreadsheet - Range ${rangeText}`;
-      
-      pdf.setFontSize(16);
-      pdf.text(title, 14, 20);
-      
-      // Add timestamp
-      pdf.setFontSize(10);
-      pdf.text(`Generated on: ${new Date().toLocaleString()}`, 14, 30);
-
-      // Filter out empty rows for cleaner PDF
-      const filteredData = selectedData.filter(row => 
-        row.some(cell => cell !== null && cell !== undefined && cell !== '')
-      );
-
-      if (filteredData.length === 0) {
-        pdf.setFontSize(12);
-        pdf.text('Selected area contains no data', 14, 50);
-      } else {
-        // Create table
-        pdf.autoTable({
-          head: [],
-          body: filteredData,
-          startY: 40,
-          styles: {
-            fontSize: 8,
-            cellPadding: 3,
-          },
-          headStyles: {
-            fillColor: [59, 130, 246],
-            textColor: 255,
-            fontStyle: 'bold',
-          },
-          alternateRowStyles: {
-            fillColor: [245, 247, 250],
-          },
-          tableLineColor: [229, 231, 235],
-          tableLineWidth: 0.5,
-        });
-      }
-
-      // Save the PDF
-      const saveFileName = fileName 
-        ? `${fileName.replace(/\.[^/.]+$/, "")}_${rangeText}.pdf`
-        : `spreadsheet_${rangeText}.pdf`;
-      
-      pdf.save(saveFileName);
-      
-      // Show success message
-      alert(`PDF saved successfully as "${saveFileName}"`);
-      
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      alert('Error generating PDF. Please try again.');
+    } else {
+      alert('WhatsApp is not available in this environment');
+      throw new Error('WhatsApp not available');
     }
   };
 
-  // Configure handsontable settings
-  const tableSettings = {
+  // 🔁 Memoize table settings to avoid unnecessary re-renders
+  const tableSettings = useMemo(() => ({
     data: processedData,
     rowHeaders: true,
     width: "100%",
-    height: "calc(100vh - 120px)", // Allow for header space and enable scrolling
-    stretchH: "none", // Don't stretch columns to fit width
+    height: "calc(100vh - 120px)",
+    stretchH: "none",
     licenseKey: "non-commercial-and-evaluation",
     mergeCells: mergeCells || [],
-    // Enable additional features for better Excel compatibility
     allowInsertRow: true,
     allowInsertColumn: true,
     allowRemoveRow: true,
     allowRemoveColumn: true,
-    contextMenu: true,
+    contextMenu: {
+      items: {
+        send_whatsapp: {
+          name: '📱 Send to WhatsApp',
+          callback: (key, selection) => {
+            const hot = hotRef.current?.hotInstance;
+            if (hot && selection && selection.length > 0) {
+              const { start } = selection[0];
+              const cell = hot.getCell(start.row, start.col);
+              if (cell) {
+                showWhatsAppDropdown(start.row, start.col, cell);
+              }
+            }
+          },
+        },
+        // '---------': '---------',
+        // 'row_above': { name: 'Insert row above' },
+        // 'row_below': { name: 'Insert row below' },
+        // 'col_left': { name: 'Insert column left' },
+        // 'col_right': { name: 'Insert column right' },
+        // '---------2': '---------',
+        // 'remove_row': { name: 'Remove row' },
+        // 'remove_col': { name: 'Remove column' },
+        // '---------3': '---------',
+        // 'undo': { name: 'Undo' },
+        // 'redo': { name: 'Redo' },
+        // '---------4': '---------',
+        // 'copy': { name: 'Copy' },
+        // 'cut': { name: 'Cut' },
+        // 'paste': { name: 'Paste' },
+      }
+    },
     manualColumnResize: true,
     manualRowResize: true,
     manualColumnMove: true,
     manualRowMove: true,
-    // Set column widths - first three columns wider
-    colWidths: function(col) {
-      if (col < 3) {
-        return 150; // First three columns (A, B, C) are wider
-      }
-      return 100; // Rest of the columns use default width
-    },
-    // Set default row height
+    colWidths: (col) => col < 3 ? 150 : 100,
     rowHeights: 23,
-    // Enable scrolling
     scrollbarV: true,
     scrollbarH: true,
-    // Virtual scrolling for better performance
     virtualScrolling: true,
-    // Enable multiple selection for better PDF export
     selectionMode: "multiple",
     outsideClickDeselects: false,
-    // Column headers like Excel (A, B, C, etc.)
-    colHeaders: function(col) {
+    colHeaders: (col) => {
       let result = '';
       let num = col;
       while (num >= 0) {
@@ -179,37 +180,24 @@ const Spreadsheet = ({ data, mergeCells, fileName, onUploadNew }) => {
       }
       return result;
     },
-
-    // Ensure proper rendering of merged cells
     afterChange: function (changes, source) {
-      if (source === 'loadData') {
-        return;
-      }
+      if (source === 'loadData') return;
     },
-    // Better cell rendering
     cells: function (row, col) {
       const cellProperties = {};
-      
-      // Find if this cell is part of a merged cell
-      if (mergeCells && mergeCells.length > 0) {
+      if (mergeCells?.length) {
         for (let merge of mergeCells) {
           if (row >= merge.row && row < merge.row + merge.rowspan &&
               col >= merge.col && col < merge.col + merge.colspan) {
-            // This cell is part of a merged area
-            if (row === merge.row && col === merge.col) {
-              // This is the master cell of the merge
-              cellProperties.className = 'merged-cell-master';
-            } else {
-              // This is a slave cell of the merge
-              cellProperties.className = 'merged-cell-slave';
-            }
+            cellProperties.className = (row === merge.row && col === merge.col)
+              ? 'merged-cell-master'
+              : 'merged-cell-slave';
           }
         }
       }
-      
       return cellProperties;
     }
-  };
+  }), [processedData, mergeCells, showWhatsAppDropdown]);
 
   return (
     <div style={{ 
@@ -231,40 +219,23 @@ const Spreadsheet = ({ data, mergeCells, fileName, onUploadNew }) => {
       }}>
         <div>
           <h2 style={{ margin: 0, fontSize: "1.5rem" }}>
-            📊 {fileName ? `Excel Spreadsheet: ${fileName}` : 'Basic Spreadsheet'}
+            📊 {fileName ?? 'Basic Spreadsheet'}
           </h2>
-          {fileName && (
+          {/* {fileName && (
             <p style={{ color: "#6b7280", margin: "0.5rem 0 0 0", fontSize: "0.9rem" }}>
               {mergeCells && mergeCells.length > 0 && `${mergeCells.length} merged cells detected`}
             </p>
-          )}
+          )} */}
         </div>
-                <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-          <button
-            onClick={saveSelectedToPDF}
-            style={{
-              background: "linear-gradient(135deg, #059669, #047857)",
-              color: "white",
-              border: "none",
-              padding: "0.75rem 1.5rem",
-              borderRadius: "8px",
-              cursor: "pointer",
-              fontSize: "1rem",
-              fontWeight: "500",
-              transition: "all 0.2s ease",
-              boxShadow: "0 4px 12px rgba(5, 150, 105, 0.3)"
-            }}
-            onMouseOver={(e) => {
-              e.target.style.transform = "translateY(-2px)";
-              e.target.style.boxShadow = "0 6px 16px rgba(5, 150, 105, 0.4)";
-            }}
-            onMouseOut={(e) => {
-              e.target.style.transform = "translateY(0)";
-              e.target.style.boxShadow = "0 4px 12px rgba(5, 150, 105, 0.3)";
-            }}
-          >
-            💾 Save as PDF
-          </button>
+        <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+          {/* <div style={{ 
+            fontSize: "0.9rem", 
+            color: "#6b7280",
+            fontStyle: "italic"
+          }}>
+            💡 Right-click on selected cells to send to WhatsApp
+          </div> */}
+          
           <button
             onClick={onUploadNew}
             style={{
@@ -301,6 +272,16 @@ const Spreadsheet = ({ data, mergeCells, fileName, onUploadNew }) => {
       }}>
         <HotTable ref={hotRef} {...tableSettings} />
       </div>
+
+      {/* WhatsApp Dropdown Portal */}
+      {dropdownConfig && (
+        <WhatsAppDropdown
+          contacts={dropdownConfig.contacts}
+          position={dropdownConfig.position}
+          onSend={dropdownConfig.onSend}
+          onClose={dropdownConfig.onClose}
+        />
+      )}
     </div>
   );
 };

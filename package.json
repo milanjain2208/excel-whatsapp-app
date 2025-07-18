@@ -13,10 +13,13 @@
     "handsontable": "^16.0.1",
     "jspdf": "^3.0.1",
     "jspdf-autotable": "^5.0.2",
+    "puppeteer": "^24.14.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "react-qr-code": "^2.0.18",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4",
+    "whatsapp-web.js": "^1.31.0",
     "xlsx": "^0.18.5"
   },
   "scripts": {
@@ -25,7 +28,13 @@
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "electron": "electron .",
-    "desktop": "npm run build && electron ."
+    "desktop": "npm run build && electron .",
+    "build:electron": "npm run build && electron-builder",
+    "build:win": "npm run build && electron-builder --win",
+    "build:mac": "npm run build && electron-builder --mac --dir",
+    "build:linux": "npm run build && electron-builder --linux",
+    "dist": "npm run build && electron-builder --publish=never",
+    "postinstall": "node -e \"console.log('Puppeteer will auto-download Chromium when needed')\""
   },
   "eslintConfig": {
     "extends": [
@@ -46,6 +55,61 @@
     ]
   },
   "devDependencies": {
-    "electron": "^37.2.1"
+    "electron": "^37.2.1",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.sanjeevani-pharma.excel-whatsapp-app",
+    "productName": "SP WhatBot",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "public/electron.js",
+      "node_modules/**/*",
+      "!node_modules/.cache/**/*"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "x64",
+            "arm64"
+          ]
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
+      "icon": "public/favicon.ico"
+    },
+    "linux": {
+      "target": [
+        {
+          "target": "AppImage",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "SP WhatBot"
+    }
   }
 }

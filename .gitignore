@@ -25,3 +25,6 @@ yarn-error.log*
 # Electron cache files
 *.log
 dist/
+
+.wwebjs_cache
+.wwebjs_auth
