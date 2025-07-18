@@ -125,14 +125,15 @@ async function initWhatsApp() {
         const filteredContacts = contacts
           .filter(contact => {
             // Filter: Must be a contact (not group), have a name, and phone number starting with 91 and length 12
-            const hasValidNumber = contact.number 
+            // const hasValidNumber = contact.number 
             // && 
             //   contact.number.startsWith('91') && 
             //   contact.number.length === 12;
             return contact.isMyContact && 
               contact.name && 
-              !contact.isGroup && 
-              hasValidNumber;
+              !contact.isGroup 
+            //   && 
+            //   hasValidNumber;
           });
 
         win.webContents.send("whatsapp-status-message", `Found ${filteredContacts?.length} filtered contacts`);
@@ -141,12 +142,12 @@ async function initWhatsApp() {
         const contactList = await Promise.all(
           filteredContacts.map(async (contact) => {
             let profilePicUrl = null;
-            try {
-              profilePicUrl = await contact.getProfilePicUrl();
-            } catch (error) {
-              // If no profile pic, will remain null
-              console.log(`No profile pic for ${contact.name}`);
-            }
+            // try {
+            //   profilePicUrl = await contact.getProfilePicUrl();
+            // } catch (error) {
+            //   // If no profile pic, will remain null
+            //   console.log(`No profile pic for ${contact.name}`);
+            // }
 
             return {
               id: contact.id._serialized,
@@ -160,7 +161,8 @@ async function initWhatsApp() {
 
         const sortedContactList = contactList.sort((a, b) => a.name.localeCompare(b.name));
         
-        console.log(`📱 Found ${sortedContactList.length} Indian contacts`);
+        console.log(`📱 Found ${sortedContactList.length} contacts`);
+        win.webContents.send("whatsapp-status-message", `Found ${sortedContactList?.length} contacts`);
         win.webContents.send("whatsapp-contacts", sortedContactList);
       } catch (error) {
         console.error("Error fetching contacts:", error);
