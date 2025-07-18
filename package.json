@@ -1,7 +1,26 @@
 {
-  "name": "excel-whatsapp-app",
+  "name": "whatbot",
   "version": "0.1.0",
-  "private": true,
+  "description": "A cross-platform desktop app that lets you select an area of a spreadsheet and send it as a PDF to any WhatsApp contact",
+  "author": "Milan Jain",
+  "license": "MIT",
+  "keywords": [
+    "whatsapp",
+    "excel",
+    "spreadsheet",
+    "pdf",
+    "electron",
+    "desktop-app",
+    "automation"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/milanjain2208/excel-whatsapp-app.git"
+  },
+  "bugs": {
+    "url": "https://github.com/milanjain2208/excel-whatsapp-app/issues"
+  },
+  "private": false,
   "main": "public/electron.js",
   "homepage": "./",
   "dependencies": {
@@ -59,8 +78,8 @@
     "electron-builder": "^26.0.12"
   },
   "build": {
-    "appId": "com.sanjeevani-pharma.excel-whatsapp-app",
-    "productName": "SP WhatBot",
+    "appId": "com.opensource.excel-whatsapp-app",
+    "productName": "WhatBot",
     "directories": {
       "output": "dist"
     },
@@ -109,7 +128,7 @@
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "SP WhatBot"
+      "shortcutName": "WhatBot"
     }
   }
 }

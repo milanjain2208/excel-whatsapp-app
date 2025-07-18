@@ -67,3 +67,9 @@ This project is open to contributions!
 - 🐛 Found a bug? Fix it.
 - 🌟 Want a new feature? Add it.
 - 📦 Can you reduce the bloated package size? You're my hero.
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
