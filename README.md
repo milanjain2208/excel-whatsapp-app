@@ -56,7 +56,7 @@ npm run desktop
 
 ## 📸 Preview
 
-(Add screenshots or a demo GIF here)
+[Watch demo video](https://raw.githubusercontent.com/milanjain2208/excel-whatsapp-app/prod/demo.mp4)
 
 ---
 
