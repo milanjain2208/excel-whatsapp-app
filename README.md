@@ -56,7 +56,7 @@ npm run desktop
 
 ## 📸 Preview
 
-[Watch demo video]()
+[Watch demo video](https://github.com/user-attachments/assets/6adbc138-66a6-416b-8741-51a2c00fb379)
 
 ---
 
