@@ -125,9 +125,10 @@ async function initWhatsApp() {
         const filteredContacts = contacts
           .filter(contact => {
             // Filter: Must be a contact (not group), have a name, and phone number starting with 91 and length 12
-            const hasValidNumber = contact.number && 
-              contact.number.startsWith('91') && 
-              contact.number.length === 12;
+            const hasValidNumber = contact.number 
+            // && 
+            //   contact.number.startsWith('91') && 
+            //   contact.number.length === 12;
             return contact.isMyContact && 
               contact.name && 
               !contact.isGroup && 
